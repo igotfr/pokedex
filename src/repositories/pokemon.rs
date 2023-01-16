@@ -35,6 +35,8 @@ pub trait Repository: Send + Sync {
 
   fn fetch_all(&self) -> Result<Vec<Pokemon>, FetchAllError>;
 
+  fn fetch_by_name(&self, name: String) -> Result<Vec<Pokemon>, FetchAllError>;
+
   fn fetch_one(&self, number: PokemonNumber) -> Result<Pokemon, FetchOneError>;
 
   fn delete(&self, number: PokemonNumber) -> Result<(), DeleteError>;
@@ -104,6 +106,23 @@ impl Repository for InMemoryRepository {
 
     let mut pokemons = lock.to_vec();
     pokemons.sort_by(|a, b| a.number.cmp(&b.number));
+    Ok(pokemons)
+  }
+  
+  fn fetch_by_name(&self, name: String) -> Result<Vec<Pokemon>, FetchAllError> {
+    if self.error {
+      return Err(FetchAllError::Unknown)
+    }
+
+    let lock = match self.pokemons.lock() {
+      Ok(lock) => lock,
+      _ => return Err(FetchAllError::Unknown),
+    };
+
+    let mut pokemons = lock.to_vec();
+    pokemons = pokemons.into_iter().filter(
+      |p| String::from(p.name.clone()).contains(name.as_str())
+    ).collect::<Vec<Pokemon>>();
     Ok(pokemons)
   }
 
@@ -251,6 +270,11 @@ impl Repository for AirtableRepository {
         }
       }
 
+      Ok(pokemons)
+    }
+
+    fn fetch_by_name(&self, name: String) -> Result<Vec<Pokemon>, FetchAllError> {
+      let mut pokemons = vec![];
       Ok(pokemons)
     }
 
@@ -443,6 +467,11 @@ impl Repository for SqliteRepository {
       pokemons.push(pokemon);
     }
 
+    Ok(pokemons)
+  }
+
+  fn fetch_by_name(&self, name: String) -> Result<Vec<Pokemon>, FetchAllError> {
+    let pokemons = vec![];
     Ok(pokemons)
   }
 

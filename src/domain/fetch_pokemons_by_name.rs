@@ -8,12 +8,16 @@ pub struct Response {
   pub types: Vec<String>,
 }
 
+pub struct Request {
+  name: String
+}
+
 pub enum Error {
   Unknown,
 }
 
-pub fn execute(repo: Arc<dyn Repository>) -> Result<Vec<Response>, Error> {
-  match repo.fetch_all() {
+pub fn execute(repo: Arc<dyn Repository>, req: Request) -> Result<Vec<Response>, Error> {
+  match repo.fetch_by_name(req.name) {
     Ok(pokemons) => Ok(pokemons
       .into_iter()
       .map(|p| Response {
@@ -37,7 +41,7 @@ mod tests {
   fn it_should_return_an_unknown_error_when_an_unexpected_error_happens() {
     let repo = Arc::new(InMemoryRepository::new().with_error());
 
-    let res = execute(repo);
+    let res = execute(repo, Request { name: String::from("Pikachu") });
 
     match res {
       Err(Error::Unknown) => {}
@@ -46,8 +50,16 @@ mod tests {
   }
 
   #[test]
-  fn it_should_return_all_the_pokemons_ordered_by_increasing_number_otherwise() {
+  fn it_should_return_all_the_pokemons_fetched_by_name_otherwise() {
     let repo = Arc::new(InMemoryRepository::new());
+    let req = Request { name: String::from("chu") };
+    
+    repo.insert(
+      PokemonNumber::try_from(1).unwrap(),
+      PokemonName::try_from(String::from("Apikachu")).unwrap(),
+      PokemonTypes::charmander(),
+    ).ok();
+    
     repo.insert(
       PokemonNumber::pikachu(),
       PokemonName::pikachu(),
@@ -60,16 +72,12 @@ mod tests {
       PokemonTypes::charmander(),
     ).ok();
 
-    let res = execute(repo);
+    let res = execute(repo, req);
 
     match res {
       Ok(res) => {
-        assert_eq!(res[0].number, u16::from(PokemonNumber::charmander()));
-        assert_eq!(res[0].name, String::from(PokemonName::charmander()));
-        assert_eq!(res[0].types, Vec::<String>::from(PokemonTypes::charmander()));
-        assert_eq!(res[1].number, u16::from(PokemonNumber::pikachu()));
-        assert_eq!(res[1].name, String::from(PokemonName::pikachu()));
-        assert_eq!(res[1].types, Vec::<String>::from(PokemonTypes::pikachu()));
+        assert_eq!(res.len(), 2);
+        assert_eq!(res[0].name, String::from("Apikachu"));
       }
       _ => unreachable!(),
     }
