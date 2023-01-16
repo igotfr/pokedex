@@ -17,22 +17,22 @@ pub fn run(repo: Arc<dyn Repository>) {
       "Delete a Pokemon",
       "Exit",
     ];
-    let index = match Select::with_theme(&ColorfulTheme::default())
+
+    // This is sus code. But it's good code :)
+    match match Select::with_theme(&ColorfulTheme::default())
       .with_prompt("Make your choice")
       .items(&choices)
       .default(0)
       .interact() {
         Ok(index) => index,
         _ => continue,
-    };
-
-    match index {
-      0 => fetch_all_pokemons::run(repo.clone()),
-      1 => fetch_pokemon::run(repo.clone()),
-      2 => create_pokemon::run(repo.clone()),
-      3 => delete_pokemon::run(repo.clone()),
-      4 => break,
-      _ => continue,
+      } {
+        0 => fetch_all_pokemons::run(repo.clone()),
+        1 => fetch_pokemon::run(repo.clone()),
+        2 => create_pokemon::run(repo.clone()),
+        3 => delete_pokemon::run(repo.clone()),
+        4 => break,
+        _ => continue,
     }
   }
 }
